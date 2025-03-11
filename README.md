@@ -64,3 +64,6 @@ ORDER BY v.voter_address, vote_count DESC
 | blockchain | block_number | block_time       | address                                    | token_address                              | token_standard | balance_raw         | balance | token_symbol | token_id | collection_name |
 | ---------- | ------------ | ---------------- | ------------------------------------------ | ------------------------------------------ | -------------- | ------------------- | ------- | ------------ | -------- | --------------- |
 | ethereum   | 15151435     | 2022-07-16 03:54 | 0x018c1ccdda1857fc79a46c4d3b2db57a6bb76302 | 0x1f9840a85d5af5bf1d1762f925bdaddc4201f984 | erc20          | 1000000000000000000 | 1       | UNI          |          |                 |
+
+scripts02 文件夹
+hold_percentage.py --开发 Python 脚本分析治理代币集中度，计算前 10%地址的投票权重占比
