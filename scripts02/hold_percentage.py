@@ -1,50 +1,30 @@
 import pandas as pd
 
-# 读取CSV文件
-file_path = "dune_voter_hold_vote_all.csv"
-data = pd.read_csv(file_path)
+# 读取数据
+df = pd.read_csv('uniswap_proposal_voter_votes_all.csv')
 
-# 确保列名正确，并按 dao_balance（治理代币持有量）排序
-data_sorted = data.sort_values(by="dao_balance", ascending=False)
+# 计算每个 proposal_id 的前 10% 投票占比
+def calculate_top_10_percent_share(group):
+    # 按 votes 降序排序
+    group = group.sort_values(by='votes', ascending=False)
+    # 计算前 10% 投票者数量
+    top_10_count = max(1, int(len(group) * 0.1))  # 至少保留 1 个
+    # 计算前 10% 投票总和
+    top_10_votes = group.head(top_10_count)['votes'].sum()
+    # 计算该提案的总投票数
+    total_votes = group['votes'].sum()
+    # 计算占比
+    return pd.Series({
+        'total_votes': total_votes,
+        'top_10_votes': top_10_votes,
+        'top_10_percent_share': top_10_votes / total_votes if total_votes > 0 else 0
+    })
 
-# 计算总的UNI代币数量
-total_balance = data_sorted['dao_balance'].sum()
-print(f"总的UNI代币数量: {total_balance:.2f}%")
-# 计算前10%地址的数量
-top_10_percent_count = int(len(data_sorted) * 0.1)
-print(f"前10%地址的数量: {top_10_percent_count:.2f}%")
+# 按 proposal_id 分组并计算占比
+result = df.groupby('proposal_id').apply(calculate_top_10_percent_share).reset_index()
 
-# 获取前10%地址的总持仓
-top_10_balance = data_sorted.iloc[:top_10_percent_count]['dao_balance'].sum()
-print(f"前10%地址的总持仓: {top_10_balance:.2f}%")
-# 计算前10%地址的投票权重占比
-top_10_percent_share = (top_10_balance / total_balance) * 100
+# 判断是否存在寡头（占比超过 50% 视为寡头）
+result['is_oligopoly'] = result['top_10_percent_share'] > 0.9
 
-# 打印结果
-print(f"前10%地址的投票权重占比: {top_10_percent_share:.2f}%")
-
-
-
-
-
-# WITH voter_address_table AS (
-#     SELECT dv.voter_address,
-#            COUNT(*) AS vote_count
-#     FROM dao.votes AS dv
-#     where token_address = 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984
-#     GROUP BY dv.voter_address
-#     ORDER BY dv.voter_address
-# ),
-# voter_hold_table AS (
-#     SELECT address,MAX_BY(balance, block_time) AS dao_latest_balance
-#     FROM tokens_ethereum.balances AS teb
-#     where token_address = 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984
-#     GROUP BY address
-# )
-# SELECT vat.voter_address as voter_address,
-#     vht.dao_latest_balance as dao_balance
-# from voter_address_table as vat
-# left join voter_hold_table as vht
-# on vat.voter_address = vht.address
-# order by dao_balance desc
-32000
+# 显示结果
+print(result)
